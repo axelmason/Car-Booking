@@ -17,12 +17,12 @@ class BookingService
      * @param  Request $r
      * @return JSON
      */
-    public static function booking(Request $r) : object
+    public static function booking(Request $r): object
     {
         $seats = Seat::where('car_id', $r->car_id)->get();
         $seatt = [];
         $user = User::find(Auth::id());
-        if(auth()->user()->balance < $r->sum) {
+        if (auth()->user()->balance < $r->sum) {
             return response()->json('Недостаточно средств.', 409);
         }
         foreach ($seats as $seat) {
@@ -37,8 +37,9 @@ class BookingService
                     return response()->json('Место уже занято.', 409);
                 }
             }
-            }
-        Booking::dispatch($seatt);
+        }
+        event(new Booking($seatt));
+        // Booking::dispatch($seatt);
         return response()->json($seatt, 200);
     }
 }

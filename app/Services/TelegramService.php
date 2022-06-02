@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Handlers\TelegramEventHandler;
+use App\Events\Booking;
 
 
 class TelegramService extends TelegramEventHandler

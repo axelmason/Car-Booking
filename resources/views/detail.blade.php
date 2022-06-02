@@ -43,7 +43,6 @@
                 } else if (!$(this).is(':checked')) {
                     check -= 1;
                 }
-                console.log($('.price_field').html());
                 $('.sum_field span').html($('.price_field').html() * check);
 
                 if (check > 0) {
@@ -83,12 +82,14 @@
                             $('.booking-btn').hide();
                         },
                         409: function(response) {
-                            $.each($('input[type=checkbox]'), function(indexInArray, valueOfElement) {
+                            $.each($('input[type=checkbox]'), function(indexInArray,
+                                valueOfElement) {
                                 if ($(valueOfElement).is(':checked')) {
                                     checked.push($(this).data('id'));
                                     $(this).attr('checked', false);
                                     $(this).attr('disabled', false);
-                                    $(this).next().removeClass('btn-success').addClass('btn-outline-dark');
+                                    $(this).next().removeClass('btn-success').addClass(
+                                        'btn-outline-dark');
                                 }
                             });
                             $('.error-alert').show();
@@ -99,6 +100,7 @@
             });
             window.Echo.channel('booking')
                 .listen('Booking', (e) => {
+                    console.log(window.Echo);
                     let free_seats = $('.free_seats').html();
                     $.each(e['seats'], function(indexInArray, valueOfElement) {
                         $(`input[data-id|=${valueOfElement.seat_number}]`).attr('disabled', 'disabled');

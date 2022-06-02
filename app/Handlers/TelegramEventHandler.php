@@ -94,11 +94,7 @@ class TelegramEventHandler extends EventHandler
         }
 
         // if ($update['message']['message'] == ) {
-        //     $explode = explode(' ', $update['message']['message']);
-        //     if (isset($explode[1])) {
-        //         $user = User::where('token', strrev($explode[1]))->first();
-        //         $user->telegram_id = $update['message']['from_id']['user_id'];
-        //         $user->save();
+        //
         //         $message = "Добро пожаловать, $user->login!\nВаш баланс: $user->balance";
         //     } else {
         //         $message = "Добро пожаловать!";
@@ -107,6 +103,12 @@ class TelegramEventHandler extends EventHandler
         // }
 
         if ($update['message']['message'] == stristr($update['message']['message'], '/start')) {
+            $explode = explode(' ', $update['message']['message']);
+            if (isset($explode[1])) {
+                $user = User::where('token', strrev($explode[1]))->first();
+                $user->telegram_id = $update['message']['from_id']['user_id'];
+                $user->save();
+            }
             $cars = Car::all();
             $cars_buttons = [];
             if ($cars->count() > 0) {
