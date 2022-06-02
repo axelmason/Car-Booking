@@ -12,127 +12,14 @@ use App\Handlers\TelegramEventHandler;
 
 class TelegramService extends TelegramEventHandler
 {
-    public $current_car;
-    public $cars_list;
-    public $seats_list;
-
-    public function __construct($current_car, $cars_list, $seats_list)
-    {
-        $this->current_car = $current_car;
-        $this->cars_list = $cars_list;
-        $this->seats_list = $seats_list;
-    }
-
-    /**
-     * /start command
-     *
-     * @param  array $update
-     * @return 'Message Params'
-     */
-    public function startCommand($update)
-    {
-        $explode = explode(' ', $update['message']['message']);
-        if (isset($explode[1])) {
-            $user = TelegramService::selectUser($update, 'token', strrev($explode[1]));
-            $user->telegram_id = $update['message']['from_id']['user_id'];
-            $user->save();
-            $message = "Добро пожаловать, $user->login!\nВаш баланс: $user->balance";
-        } else {
-            $message = "Добро пожаловать";
-        }
-        $keyboard = $this->makeKeyBoard($update, 'Выбрать автомобиль', false);
-        return $this->messageParamsGenerate($update, $message, isset($keyboard) ? $keyboard : null);
-    }
-
-    /**
-     * Selects a car, sends a message and pushes in the $cars_list array
-     *
-     * @param  array $update
-     * @param  array $cars_list
-     * @return message_params
-     */
-    public function selectCar(array $update)
-    {
-        $cars = Car::all();
-        $cars_buttons = [];
-        if ($cars->count() > 0) {
-            foreach ($cars as $car) {
-                $cars_buttons [] = $car->name;
-                $this->cars_list[$car->name]['car_id'] = $car->id;
-                $this->cars_list[$car->name]['car_name'] = $car->name;
-            }
-            $keyboard = $this->makeKeyBoard($update, $cars_buttons, true);
-            $message = 'Выберите автомобиль';
-        } else {
-            $message = 'Автомобилей пока нет';
-        }
-        $this->updateCarsList($update, $this->cars_list);
-        return $this->messageParamsGenerate($update, $message, isset($keyboard) ? $keyboard : null);
-    }
-
-    public function selectSeat(array $update, $current_car)
-    {
-        $current_car[$update['message']['from_id']['user_id']] = ['car_info' => $this->cars_list[$update['message']['message']]];
-        \print_r($current_car);
-        $car = Car::find($this->cars_list[$update['message']['message']]['car_id']);
-        $seats = Seat::where('car_id', $this->cars_list[$update['message']['message']]['car_id'])->where('user_id', null)->get();
-        $seats_buttons = [];
-        if($seats->count() > 0) {
-            foreach ($seats as $seat) {
-                $seats_buttons [] = $seat->seat_number;
-                $this->seats_list['seats_number'][] = $seat->seat_number;
-            }
-            $message = "Выберите место\nЦена за место: " . strval($car->seat_price) . " руб.";
-            $keyboard = $this->makeKeyBoard($update, $seats_buttons, true);
-        } else {
-            \print_r('123');
-        }
-        $this->updateCurrentCar($update, $current_car);
-        return $this->messageParamsGenerate($update, $message, isset($keyboard) ? $keyboard : null);
-    }
-
-    /**
-     * Select user using $p1 and $p2 params
-     *
-     * @param  array $update
-     * @param  string $o1
-     * @param  string $o2
-     * @return User
-     */
-    public function selectUser(array $update, string $p1, string $p2): User
-    {
-        return User::where($p1, $p2)->first();
-    }
-
-    /**
-     * Generates message params
-     *
-     * @param  array $update
-     * @param  string $message
-     * @param  array $keyboard
-     * @return void
-     */
-    public function messageParamsGenerate(array $update, string $message, array $keyboard = null)
-    {
-        return ['peer' => $update, 'message' => $message, 'parse_mode' => 'HTML', 'reply_markup' => $keyboard];
-    }
-    
-    /**
-     * Generates keyboard
-     *
-     * @param  array $update
-     * @param  array|string $buttons
-     * @param  bool $back_button
-     * @return array Keyboard Params
-     */
-    public function makeKeyBoard(array $update, $buttons, bool $back_button = false)
+    public static function makeKeyBoard(array $update, $buttons, bool $back_button = false)
     {
         $buttons_list = [];
         if(gettype($buttons) == 'array') {
             foreach ($buttons as $button) {
                 $buttons_list [] = ['_' => 'keyboardButton', 'text' => $button];
             }
-        } elseif(gettype($buttons) == 'string') {
+        } else {
             $buttons_list [] = ['_' => 'keyboardButton', 'text' => $buttons];
         }
         if ($back_button == true) {
@@ -141,5 +28,27 @@ class TelegramService extends TelegramEventHandler
         }
         $keyboard_button_row = ['_' => 'keyboardButtonRow', 'buttons' => $buttons_list];
         return ['_' => 'replyKeyboardMarkup', 'resize' => true, 'rows' => [$keyboard_button_row, isset($back_row) ? $back_row : null]];
+    }
+
+    public static function messageParamsGenerate(array $update, string $message, array $keyboard = null)
+    {
+        return ['peer' => $update, 'message' => $message, 'parse_mode' => 'HTML', 'reply_markup' => $keyboard];
+    }
+
+    public static function seatBooking($update)
+    {
+        $seat = Seat::where('car_id', parent::$current_car[$update['message']['from_id']['user_id']]['car_info']['car_id'])->where('seat_number', parent::$current_car[$update['message']['from_id']['user_id']]['car_info']['seat_number'])->first();
+        $telegram_user = User::where('telegram_id', $update['message']['from_id']['user_id'])->first();
+        $car = Car::where('id', parent::$current_car[$update['message']['from_id']['user_id']]['car_info']['car_id'])->first();
+        if ($telegram_user->balance >= $car->seat_price) {
+            $telegram_user->balance -= $car->seat_price;
+            $seat->user_id = $telegram_user->id;
+            $seat->save();
+            $telegram_user->save();
+            $message = "Место забронировано.";
+        } else {
+            $message = "Недостаточно средств.";
+        }
+        return $message;
     }
 }
