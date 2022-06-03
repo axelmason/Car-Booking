@@ -30,6 +30,7 @@ use danog\MadelineProto\Logger;
 use App\Services\TelegramService;
 use PhpOption\None;
 use PhpParser\JsonDecoder;
+
 include 'current_cars.json';
 
 /*
@@ -74,7 +75,7 @@ class TelegramEventHandler extends EventHandler
         return $this->onUpdateNewMessage($update);
     }
 
-    public $cars_list = [];
+    static $cars_list = [];
     static $current_car;
     public $seats_list = [];
     /**
@@ -93,15 +94,6 @@ class TelegramEventHandler extends EventHandler
             return;
         }
 
-        // if ($update['message']['message'] == ) {
-        //
-        //         $message = "Добро пожаловать, $user->login!\nВаш баланс: $user->balance";
-        //     } else {
-        //         $message = "Добро пожаловать!";
-        //     }
-        //     yield $this->messages->sendMessage(TelegramService::messageParamsGenerate($update, $message, isset($keyboard) ? $keyboard : null));
-        // }
-
         if ($update['message']['message'] == stristr($update['message']['message'], '/start')) {
             $explode = explode(' ', $update['message']['message']);
             if (isset($explode[1])) {
@@ -109,26 +101,14 @@ class TelegramEventHandler extends EventHandler
                 $user->telegram_id = $update['message']['from_id']['user_id'];
                 $user->save();
             }
-            $cars = Car::all();
-            $cars_buttons = [];
-            if ($cars->count() > 0) {
-                foreach ($cars as $car) {
-                    $cars_buttons[] = $car->name;
-                    $this->cars_list[$car->name]['car_id'] = $car->id;
-                    $this->cars_list[$car->name]['car_name'] = $car->name;
-                }
-                $message = 'Выберите автомобиль';
-                $keyboard = TelegramService::makeKeyBoard($update, $cars_buttons, true);
-            } else {
-                $message = 'Автомобилей пока нет';
-            }
-            yield $this->messages->sendMessage(TelegramService::messageParamsGenerate($update, $message, isset($keyboard) ? $keyboard : null));
+            $message = TelegramService::menu($update);
+            yield $this->messages->sendMessage($message);
         }
 
-        if (array_key_exists($update['message']['message'], $this->cars_list)) {
-            self::$current_car[$update['message']['from_id']['user_id']] = ['car_info' => $this->cars_list[$update['message']['message']]];
-            $car = Car::find($this->cars_list[$update['message']['message']]['car_id']);
-            $seats = Seat::where('car_id', $this->cars_list[$update['message']['message']]['car_id'])->where('user_id', null)->get();
+        if (array_key_exists($update['message']['message'], self::$cars_list)) {
+            self::$current_car[$update['message']['from_id']['user_id']] = ['car_info' => self::$cars_list[$update['message']['message']]];
+            $car = Car::find(self::$cars_list[$update['message']['message']]['car_id']);
+            $seats = Seat::where('car_id', self::$cars_list[$update['message']['message']]['car_id'])->where('user_id', null)->get();
             $seats_buttons = [];
             if($seats->count() > 0) {
                 foreach ($seats as $seat) {
@@ -145,7 +125,8 @@ class TelegramEventHandler extends EventHandler
 
         if ((isset($this->seats_list['seats_number']) ? in_array($update['message']['message'], $this->seats_list['seats_number']) : '') && in_array($update['message']['from_id']['user_id'], array_keys(self::$current_car)) && !empty(self::$current_car[$update['message']['from_id']['user_id']])) {
             self::$current_car[$update['message']['from_id']['user_id']]['car_info']['seat_number'] = $update['message']['message'];
-            $car = Car::find(self::$current_car[$update['message']['from_id']['user_id']]['car_info']['car_id'])->first();
+            $car = Car::find(self::$current_car[$update['message']['from_id']['user_id']]['car_info']['car_id']);
+            print_r($car);
             $keyboard = TelegramService::makeKeyBoard($update, "Да", true);
             $message = "Выбрано: " . $update['message']['message'] . " место\nАвтомобиль: " . self::$current_car[$update['message']['from_id']['user_id']]['car_info']['car_name'] . "\nСтоимость брони: $car->seat_price руб.\n<strong>Забронировать?</strong>";
             yield $this->messages->sendMessage(TelegramService::messageParamsGenerate($update, $message, $keyboard));
@@ -162,12 +143,12 @@ class TelegramEventHandler extends EventHandler
 
 
         if ($update['message']['message'] == "В главное меню") {
+            $user = User::where('telegram_id', $update['message']['from_id']['user_id'])->first();
             self::$current_car[$update['message']['from_id']['user_id']] = [];
-            $this->seats_list = [];
-            $this->cars_list = [];
-            $message = "Главное меню. Введите /start";
-            // $keyboard = TelegramService::makeKeyBoard($update, "Выбрать автомобиль", false);
-            yield $this->messages->sendMessage(TelegramService::messageParamsGenerate($update, $message, isset($keyboard) ? $keyboard : null));
+            self::$cars_list = [];
+            self::$cars_list = [];
+            $message = TelegramService::menu($update);
+            yield $this->messages->sendMessage($message);
         }
 
         $encode = json_encode(self::$current_car, JSON_PRETTY_PRINT);

@@ -25,10 +25,12 @@ class TelegramService extends TelegramEventHandler
         }
         if ($back_button == true) {
             $back_button = ['_' => 'keyboardButton', 'text' => "В главное меню"];
-            $back_row = ['_' => 'keyboardButtonRow', 'buttons' => [$back_button]];
+        } else {
+            $back_button = ['_' => 'keyboardButton', 'text' => null];
         }
         $keyboard_button_row = ['_' => 'keyboardButtonRow', 'buttons' => $buttons_list];
-        return ['_' => 'replyKeyboardMarkup', 'resize' => true, 'rows' => [$keyboard_button_row, isset($back_row) ? $back_row : null]];
+        $back_row = ['_' => 'keyboardButtonRow', 'buttons' => [$back_button]];
+        return ['_' => 'replyKeyboardMarkup', 'resize' => true, 'rows' => [$keyboard_button_row, $back_row]];
     }
 
     public static function messageParamsGenerate(array $update, string $message, array $keyboard = null)
@@ -50,6 +52,29 @@ class TelegramService extends TelegramEventHandler
         } else {
             $message = "Недостаточно средств.";
         }
+        event(new Booking([$seat]));
         return $message;
+    }
+
+    public static function menu($update)
+    {
+        $user = User::where('telegram_id', $update['message']['from_id']['user_id'])->first();
+        if(!empty($user)) {
+            $balance_string = "\nВаш баланс: $user->balance руб.";
+        }
+        $cars = Car::all();
+        $cars_buttons = [];
+        if ($cars->count() > 0) {
+            foreach ($cars as $car) {
+                $cars_buttons[] = $car->name;
+                parent::$cars_list[$car->name]['car_id'] = $car->id;
+                parent::$cars_list[$car->name]['car_name'] = $car->name;
+            }
+            $message = 'Выберите автомобиль';
+            $keyboard = TelegramService::makeKeyBoard($update, $cars_buttons, true);
+        } else {
+            $message = 'Автомобилей пока нет';
+        }
+        return self::messageParamsGenerate($update, $message.$balance_string ?? null, $keyboard ?? null);
     }
 }
