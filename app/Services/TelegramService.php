@@ -25,12 +25,10 @@ class TelegramService extends TelegramEventHandler
         }
         if ($back_button == true) {
             $back_button = ['_' => 'keyboardButton', 'text' => "В главное меню"];
-        } else {
-            $back_button = ['_' => 'keyboardButton', 'text' => null];
+            $back_row = ['_' => 'keyboardButtonRow', 'buttons' => [$back_button]];
         }
         $keyboard_button_row = ['_' => 'keyboardButtonRow', 'buttons' => $buttons_list];
-        $back_row = ['_' => 'keyboardButtonRow', 'buttons' => [$back_button]];
-        return ['_' => 'replyKeyboardMarkup', 'resize' => true, 'rows' => [$keyboard_button_row, $back_row]];
+        return ['_' => 'replyKeyboardMarkup', 'resize' => true, 'rows' => [$keyboard_button_row, (isset($back_row) ? $back_row : null)]];
     }
 
     public static function messageParamsGenerate(array $update, string $message, array $keyboard = null)
@@ -75,6 +73,6 @@ class TelegramService extends TelegramEventHandler
         } else {
             $message = 'Автомобилей пока нет';
         }
-        return self::messageParamsGenerate($update, $message.$balance_string ?? null, $keyboard ?? null);
+        return self::messageParamsGenerate($update, $message.(isset($balance_string) ? $balance_string : null), $keyboard ?? null);
     }
 }
