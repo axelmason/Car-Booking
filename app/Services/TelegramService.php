@@ -15,20 +15,21 @@ class TelegramService extends TelegramEventHandler
 {
     public static function makeKeyBoard(array $update, $buttons, bool $back_button = false)
     {
-        $buttons_list = [];
+        $rows = [];
+
+        if ($back_button == true) {
+            $rows [] = ['_' => 'keyboardButtonRow', 'buttons' => [['_' => 'keyboardButton', 'text' => "В главное меню"]]];
+        }
+
         if(gettype($buttons) == 'array') {
             foreach ($buttons as $button) {
-                $buttons_list [] = ['_' => 'keyboardButton', 'text' => $button];
+                $rows [] = ['_' => 'keyboardButtonRow', 'buttons' => [['_' => 'keyboardButton', 'text' => $button]]];
             }
         } else {
-            $buttons_list [] = ['_' => 'keyboardButton', 'text' => $buttons];
+            $rows [] = ['_' => 'keyboardButton', 'text' => [['_' => 'keyboardButton', 'text' => $buttons]]];
         }
-        if ($back_button == true) {
-            $back_button = ['_' => 'keyboardButton', 'text' => "В главное меню"];
-            $back_row = ['_' => 'keyboardButtonRow', 'buttons' => [$back_button]];
-        }
-        $keyboard_button_row = ['_' => 'keyboardButtonRow', 'buttons' => $buttons_list];
-        return ['_' => 'replyKeyboardMarkup', 'resize' => true, 'rows' => [$keyboard_button_row, (isset($back_row) ? $back_row : null)]];
+
+        return ['_' => 'replyKeyboardMarkup', 'resize' => true, 'rows' => $rows];
     }
 
     public static function messageParamsGenerate(array $update, string $message, array $keyboard = null)
@@ -64,15 +65,22 @@ class TelegramService extends TelegramEventHandler
         $cars_buttons = [];
         if ($cars->count() > 0) {
             foreach ($cars as $car) {
-                $cars_buttons[] = $car->name;
-                parent::$cars_list[$car->name]['car_id'] = $car->id;
-                parent::$cars_list[$car->name]['car_name'] = $car->name;
+                if($car->booking_date.' '.$car->booking_time > date('Y-m-d H:i:s')) {
+                    $cars_buttons[] = $car->name;
+                    parent::$cars_list[$car->name]['car_id'] = $car->id;
+                    parent::$cars_list[$car->name]['car_name'] = $car->name;
+                }
             }
-            $message = 'Выберите автомобиль';
-            $keyboard = TelegramService::makeKeyBoard($update, $cars_buttons, true);
+            if(!empty($cars_buttons)) {
+                $message = 'Доступные автомобили для поездки';
+                $keyboard = TelegramService::makeKeyBoard($update, $cars_buttons, false);
+            } else {
+                $message = 'Автомобилей пока нет';
+            }
         } else {
             $message = 'Автомобилей пока нет';
         }
+
         return self::messageParamsGenerate($update, $message.(isset($balance_string) ? $balance_string : null), $keyboard ?? null);
     }
 }

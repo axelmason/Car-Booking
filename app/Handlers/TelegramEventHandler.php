@@ -24,6 +24,7 @@ namespace App\Handlers;
 use App\Models\User;
 use App\Models\Car;
 use App\Models\Seat;
+use App\Services\DrawService;
 use danog\MadelineProto\API;
 use danog\MadelineProto\EventHandler;
 use danog\MadelineProto\Logger;
@@ -87,7 +88,7 @@ class TelegramEventHandler extends EventHandler
      */
     public function onUpdateNewMessage(array $update): \Generator
     {
-        $j = file_get_contents(__DIR__.DIRECTORY_SEPARATOR.'current_cars.json', true);
+        $j = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . 'current_cars.json', true);
         self::$current_car = json_decode($j, true);
 
         if ($update['message']['_'] === 'messageEmpty' || $update['message']['out'] ?? false) {
@@ -110,7 +111,7 @@ class TelegramEventHandler extends EventHandler
             $car = Car::find(self::$cars_list[$update['message']['message']]['car_id']);
             $seats = Seat::where('car_id', self::$cars_list[$update['message']['message']]['car_id'])->where('user_id', null)->get();
             $seats_buttons = [];
-            if($seats->count() > 0) {
+            if ($seats->count() > 0) {
                 foreach ($seats as $seat) {
                     $seats_buttons[] = strval($seat->seat_number);
                     $this->seats_list['seats_number'][] = $seat->seat_number;
@@ -126,8 +127,7 @@ class TelegramEventHandler extends EventHandler
         if ((isset($this->seats_list['seats_number']) ? in_array($update['message']['message'], $this->seats_list['seats_number']) : '') && in_array($update['message']['from_id']['user_id'], array_keys(self::$current_car)) && !empty(self::$current_car[$update['message']['from_id']['user_id']])) {
             self::$current_car[$update['message']['from_id']['user_id']]['car_info']['seat_number'] = $update['message']['message'];
             $car = Car::find(self::$current_car[$update['message']['from_id']['user_id']]['car_info']['car_id']);
-            print_r($car);
-            $keyboard = TelegramService::makeKeyBoard($update, "Да", true);
+            $keyboard = TelegramService::makeKeyBoard($update, ["Да"], true);
             $message = "Выбрано: " . $update['message']['message'] . " место\nАвтомобиль: " . self::$current_car[$update['message']['from_id']['user_id']]['car_info']['car_name'] . "\nСтоимость брони: $car->seat_price руб.\n<strong>Забронировать?</strong>";
             yield $this->messages->sendMessage(TelegramService::messageParamsGenerate($update, $message, $keyboard));
         }
@@ -152,7 +152,24 @@ class TelegramEventHandler extends EventHandler
         }
 
         $encode = json_encode(self::$current_car, JSON_PRETTY_PRINT);
-        file_put_contents(__DIR__.DIRECTORY_SEPARATOR.'current_cars.json', $encode);
+        file_put_contents(__DIR__ . DIRECTORY_SEPARATOR . 'current_cars.json', $encode);
+
+        yield $this->winnerMessage($update);
+    }
+
+    public function winnerMessage()
+    {
+        $cars = Car::all();
+        foreach ($cars as $car) {
+            if ($car->booking_date . ' ' . $car->booking_time <= date('Y-m-d H:i:s') && $car->winner_seat == null) {
+                $random_seat = Seat::where('car_id', $car->id)->where('user_id', '!=', null)->get()->random(1)[0]->seat_number;
+                $car->winner_seat = $random_seat;
+                $car->save();
+                $winner = Seat::where('seat_number', $random_seat)->where('car_id', $car->id)->first()->user->telegram_id;
+                $message = "Ваше место №$random_seat в автомобиле $car->name оказалось счастливым!";
+                return $this->messages->sendMessage(['peer' => $winner, 'text' => $message]);
+            }
+        }
     }
 }
 

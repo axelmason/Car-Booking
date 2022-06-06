@@ -15,6 +15,7 @@ use Telegram\Bot\Api;
 use TelegramBot\Api\Client;
 use danog\MadelineProto\Settings;
 use App\Handlers\TelegramEventHandler;
+use App\Services\DrawService;
 
 // if (\file_exists('vendor/autoload.php')) {
 //     include 'vendor/autoload.php';
@@ -53,12 +54,5 @@ class HomeController extends Controller
     {
         UserService::addBalance($r);
         return to_route('balancePage')->with('success', 'Баланс пополнен на '. $r->balance. ' руб.');
-    }
-
-    public function bot()
-    {
-        // TelegramEventHandler::startAndLoop('bot.madeline');
-        // $settings = new Settings;
-        // TelegramEventHandler::startAndLoop('bot.madeline', $settings);
     }
 }

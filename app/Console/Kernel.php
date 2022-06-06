@@ -2,8 +2,10 @@
 
 namespace App\Console;
 
+use App\Handlers\TelegramEventHandler;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Log\Logger;
 
 class Kernel extends ConsoleKernel
 {
@@ -15,7 +17,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // $schedule->call(function() {
+        //     $event = new TelegramEventHandler();
+        //     $event->winnerMessage();
+        //     print_r('Отправлено');
+        // })->everyMinute();
     }
 
     /**

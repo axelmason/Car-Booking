@@ -19,6 +19,7 @@ return new class extends Migration
             $table->date('booking_date')->nullable();
             $table->time('booking_time')->nullable();
             $table->integer('seat_price');
+            $table->unsignedBigInteger('winner_seat')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });
