@@ -75,10 +75,10 @@ class TelegramService extends TelegramEventHandler
                 $message = 'Доступные автомобили для поездки';
                 $keyboard = TelegramService::makeKeyBoard($update, $cars_buttons, false);
             } else {
-                $message = 'Автомобилей пока нет';
+                $message = 'Доступных автомобилей пока нет';
             }
         } else {
-            $message = 'Автомобилей пока нет';
+            $message = 'Доступных автомобилей пока нет';
         }
 
         return self::messageParamsGenerate($update, $message.(isset($balance_string) ? $balance_string : null), $keyboard ?? null);

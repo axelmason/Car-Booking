@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\API\CarsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +16,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+Route::resource('users', UserController::class);
+Route::post('users/auth', [UserController::class, 'login']);
+
+Route::resource('cars', CarsController::class);
+Route::post('cars/restore/{id}', [CarsController::class, 'restore']);

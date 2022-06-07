@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class RegisterRequest extends FormRequest
+class CreateCarRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -26,9 +26,11 @@ class RegisterRequest extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email|unique:users',
-            'login' => 'required|unique:users',
-            'password' => 'required|min:6|confirmed',
+            'name' => 'required',
+            'seats' => 'required|integer|min:1|max:15',
+            'seat_price' => 'required',
+            'date' => 'required',
+            'time' => 'required',
         ];
     }
 
@@ -38,6 +40,6 @@ class RegisterRequest extends FormRequest
             'success'   => false,
             'message'   => 'Validation errors',
             'data'      => $validator->errors(),
-        ], 417));
+        ], 400));
     }
 }

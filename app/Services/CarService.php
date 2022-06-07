@@ -28,19 +28,19 @@ class CarService
 
     public static function getTrashed()
     {
-        // if(isset(Car::onlyTrashed()->get())) {
-        //     return Car::onlyTrashed()->get();
-        // }
+        if(!empty(Car::onlyTrashed()->get())) {
+            return Car::onlyTrashed()->get();
+        }
     }
 
     public static function restoreCar(int $car_id) : Car
     {
-        // if(isset(Car::withTrashed()->where('id', $car_id)->first())) {
-        //     $car = Car::withTrashed()->where('id', $car_id)->first();
-        //     $car->restore();
-        //     $car->save();
-        //     return $car;
-        // }
+        if(!empty(Car::withTrashed()->where('id', $car_id)->first())) {
+            $car = Car::withTrashed()->where('id', $car_id)->first();
+            $car->restore();
+            $car->save();
+            return $car;
+        }
     }
 
     public static function deleteCar(int $car_id) : Car
