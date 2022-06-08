@@ -17,10 +17,16 @@
         <p>Цена за место: <b class="price_field">{{ $car->seat_price }}</b> руб.</p>
         <div class="error-alert alert alert-danger" style="display: none; width: max-content;">Недостаточно средств.</div>
         @if ($car->booking_date . ' ' . $car->booking_time <= date('Y-m-d H:i:s'))
-            <div class="alert alert-info" style="width: max-content;">Поездка уже началась. <br>Невозможно забронировать места.</div>
+            <div class="alert alert-info" style="width: max-content;">
+                Поездка уже началась. <br>
+                Невозможно забронировать места. <br>
+                {{ $car->booking_date . ' ' . $car->booking_time }}
+            </div>
         @endif
         @if ($car->winner_seat)
-            <div class="alert alert-success" style="width: max-content;">Победитель викторины: место номер <b>{{ $car->winner_seat }}</b></div>
+            <div class="alert alert-success" style="width: max-content;">Победитель викторины: место номер
+                <b>{{ $car->winner_seat }}</b>
+            </div>
         @endif
         <form class="booking-form" data-car-id="{{ $car->id }}">
             <div class="d-flex">
@@ -29,7 +35,7 @@
                         id="seat_number-{{ $seat->seat_number }}" class="btn-check" autocomplete="off"
                         @if ($seat->user_id !== null || $car->booking_date . ' ' . $car->booking_time <= date('Y-m-d H:i:s')) disabled @endif data-id="{{ $seat->seat_number }}">
                     <label for="seat_number-{{ $seat->seat_number }}"
-                        class="btn @if (auth()->check()) @if (auth()->user()->id == $seat->user_id) btn-success @else btn-outline-dark @endif @endif me-2 fs-5">{{ $seat->seat_number }}</label>
+                        class="btn btn-outline-dark @if (!auth()->check()) disabled @endif @if($seat->user_id !== null) disabled btn-success bg-success text-white @endif me-2 fs-5">{{ $seat->seat_number }}</label>
                 @endforeach
             </div>
             <div class="sum_field">Итого: <span>0</span> руб.</div>

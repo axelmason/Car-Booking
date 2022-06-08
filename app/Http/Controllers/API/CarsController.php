@@ -16,7 +16,7 @@ class CarsController extends \App\Http\Controllers\Controller
      */
     public function index()
     {
-        return response()->json(Car::with('seats')->get(), 200);
+        return response()->json(Car::all(), 200);
     }
 
     /**
@@ -27,10 +27,11 @@ class CarsController extends \App\Http\Controllers\Controller
      */
     public function store(CreateCarRequest $request)
     {
+        $date = date("Y.m.d", strtotime($request->date));
         $car = Car::create([
             'name' => $request->name,
             'seat_price' => $request->seat_price,
-            'booking_date' => $request->date,
+            'booking_date' => $date,
             'booking_time' => $request->time
         ]);
 
@@ -49,8 +50,11 @@ class CarsController extends \App\Http\Controllers\Controller
      */
     public function show($id)
     {
-        $car = Car::with('seats')->where('id', $id)->first();
-        return response()->json($car, 200);
+        $car = Car::find($id);
+        if(isset($car)) {
+            return response()->json(Car::find($id), 200);
+        }
+        return response()->json(['message' => "Car not found", 'code' => 404], 404);
     }
 
     /**
@@ -111,5 +115,14 @@ class CarsController extends \App\Http\Controllers\Controller
             return response()->json(['message' => "Car $car->name restored", 'code' => 200], 200);
         }
         return response()->json(['message' => "Car not found in the trash.", 'code' => 404], 404);
+    }
+
+    public function seats($id)
+    {
+        $seats = Car::find($id)->seats;
+        if(isset($seats)) {
+            return response()->json(['code' => 200, 'seats' => $seats], 200);
+        }
+        return response()->json(['message' => "There are no seats in this car.", 'code' => 404], 404);
     }
 }
