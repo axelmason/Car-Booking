@@ -103,6 +103,7 @@ class TelegramEventHandler extends EventHandler
                 $user->save();
             }
             $message = TelegramService::menu($update);
+            \print_r($message);
             yield $this->messages->sendMessage($message);
         }
 
