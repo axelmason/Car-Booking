@@ -30,7 +30,8 @@ class HomeController extends Controller
 {
     public function index()
     {
-        return view('index');
+        $cars = Car::all();
+        return view('index', \compact('cars'));
     }
 
     public function detail(int $car_id)
