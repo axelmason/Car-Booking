@@ -39,7 +39,7 @@ class CarService
         //     $car = Car::withTrashed()->where('id', $car_id)->first();
         //     $car->restore();
         //     $car->save();
-        //     return $car
+        //     return $car;
         // }
     }
 
