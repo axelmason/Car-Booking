@@ -17,7 +17,8 @@ class AdminController extends Controller
 
     public function carsPage()
     {
-        return view('admin.carsPage');
+        $cars = Car::all();
+        return view('admin.carsPage', compact('cars'));
     }
 
     public function addCarPage()
